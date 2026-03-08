@@ -364,10 +364,12 @@ new class extends Component {
                     </svg>
                 </div>
                 <h3 class="text-xl font-semibold mb-2 text-red-500">
-                    {{ $status === 'connecting' ? 'Conexión establecida' : 'Esperando conexión...' }}</h3>
+                    {{ $status === 'connecting' ? 'Conexión establecida' : 'Esperando conexión...' }}
+                </h3>
                 <div
                     class="bg-black border border-red-900/50 rounded-lg px-6 py-3 text-3xl font-bold tracking-widest text-white mb-2 shadow-inner">
-                    {{ $pairingCode }}</div>
+                    {{ $pairingCode }}
+                </div>
                 <p class="text-xs text-gray-500">Pásale este código al receptor</p>
             @else
                 <div class="w-16 h-16 bg-red-950 text-red-500 rounded-full flex items-center justify-center mb-6">
