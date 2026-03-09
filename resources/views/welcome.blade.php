@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FileShare - Envía archivos al instante</title>
+    <title>ReverbSend</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -27,24 +27,18 @@
                         d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                 </svg>
             </div>
-            <span class="text-xl font-bold tracking-tight">FileShare</span>
+            <span class="text-xl font-bold tracking-tight">ReverbSend</span>
         </div>
-        <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
-            <a href="#" class="hover:text-white transition">Transferencias</a>
-            <a href="#" class="hover:text-white transition">Recientes</a>
-            <a href="#" class="hover:text-white transition">Ayuda</a>
-            <a href="#"
-                class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-full transition shadow-[0_0_15px_rgba(220,38,38,0.3)]">Mi
-                Cuenta</a>
-        </div>
+
     </nav>
 
     <header class="text-center pt-20 pb-12 px-4">
         <h1 class="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-            Envía y recibe archivos <span class="text-red-600">al instante</span>
+            Transferencia Directa P2P <span class="text-red-600">sin Intermediarios</span>
         </h1>
         <p class="text-gray-400 text-lg max-w-2xl mx-auto">
-            La forma más rápida y segura de compartir documentos pesados<br>sin registros ni complicaciones.
+            La forma más privada de enviar archivos pesados: los datos viajan directamente de dispositivo a dispositivo,
+            sin pasar por la nube.
         </p>
     </header>
 
@@ -60,8 +54,9 @@
                     </path>
                 </svg>
             </div>
-            <h4 class="font-bold mb-2">Cifrado de extremo a extremo</h4>
-            <p class="text-sm text-gray-500">Tus archivos están protegidos y solo el destinatario puede verlos.</p>
+            <h4 class="font-bold mb-2">Privacidad total</h4>
+            <p class="text-sm text-gray-500">A diferencia de otras apps, tus archivos nunca se almacenan en internet. La
+                transferencia es un túnel privado y directo entre tú y el destinatario.</p>
         </div>
         <div>
             <div class="w-10 h-10 mx-auto text-red-600 mb-4 flex justify-center items-center">
@@ -70,8 +65,8 @@
                         d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                 </svg>
             </div>
-            <h4 class="font-bold mb-2">Sin límites de velocidad</h4>
-            <p class="text-sm text-gray-500">Transferencias ultrarrápidas optimizadas para archivos de gran tamaño.</p>
+            <h4 class="font-bold mb-2">Velocidad Máxima</h4>
+            <p class="text-sm text-gray-500">Sin límites impuestos. La velocidad depende únicamente de tu conexión.</p>
         </div>
         <div>
             <div class="w-10 h-10 mx-auto text-red-600 mb-4 flex justify-center items-center">
@@ -80,9 +75,9 @@
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
             </div>
-            <h4 class="font-bold mb-2">Auto-eliminación</h4>
-            <p class="text-sm text-gray-500">Los archivos se eliminan automáticamente después de su descarga o
-                expiración.</p>
+            <h4 class="font-bold mb-2">Seguridad P2P</h4>
+            <p class="text-sm text-gray-500">Los datos viajan fragmentados y cifrados mediante el protocolo WebRTC.
+                Nadie, ni siquiera nosotros, puede interceptar o ver lo que envias.</p>
         </div>
     </section>
 
@@ -93,12 +88,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
             </svg>
-            © 2024 FileShare Inc.
-        </div>
-        <div class="flex gap-6">
-            <a href="#" class="hover:text-white transition">Términos</a>
-            <a href="#" class="hover:text-white transition">Privacidad</a>
-            <a href="#" class="hover:text-white transition">Contacto</a>
+            © 2026 Ángel De Cara Salas
         </div>
     </footer>
 
