@@ -159,8 +159,6 @@ new class extends Component {
                 await this.handleSignal(payload);
             });
 
-            // LA MAGIA: Si soy el receptor, me suscribo y espero 1.5s antes de avisar
-            // Esto asegura que nunca haya sordera a la Oferta
             if (this.$wire.role === 'receiver') {
                 setTimeout(() => {
                     this.queueSignal({ type: 'connected' });
@@ -173,16 +171,13 @@ new class extends Component {
             this.pc = new RTCPeerConnection(config);
 
             if (this.$wire.role === 'sender') {
-                // 1. Añadimos ordered: true para asegurar que los trozos del archivo lleguen en estricto orden
                 this.dc = this.pc.createDataChannel('fileTransfer', { ordered: true });
-                // 2. Subimos el umbral del buffer a 4MB
                 this.dc.bufferedAmountLowThreshold = 1024 * 1024 * 4; 
                 
                 this.setupDataChannel();
             } else {
                 this.pc.ondatachannel = (event) => {
                     this.dc = event.channel;
-                    // Aplicamos el mismo buffer al receptor
                     this.dc.bufferedAmountLowThreshold = 1024 * 1024 * 4;
                     
                     this.setupDataChannel();
@@ -227,7 +222,6 @@ new class extends Component {
             try {
                 if (signal.type === 'connected') {
                     this.uiStatus = 'connecting';
-                    // Cuando el receptor avisa que esta listo, el emisor empieza a trabajar
                     if (this.$wire.role === 'sender') {
                         this.queueSignal({ type: 'file-info', name: this.transferFileName, size: this.transferFileSize, fileType: this.transferFileType });
                         const offer = await this.pc.createOffer();
@@ -276,20 +270,17 @@ new class extends Component {
         async startSendingData() {
             this.uiStatus = 'sending';
             const file = this.fileToSend;
-            const chunkSize = 131072; // 128KB: El punto dulce de velocidad
+            const chunkSize = 131072;
             let offset = 0;
             let lastUpdateOffset = 0;
 
-            // Pre-leemos el primer trozo
             while (offset < file.size) {
-                // Si el buffer está lleno, esperamos de forma más eficiente
                 if (this.dc.bufferedAmount > this.dc.bufferedAmountLowThreshold) {
                     await new Promise(resolve => {
                         const checkBuffer = () => {
                             if (this.dc.bufferedAmount <= this.dc.bufferedAmountLowThreshold) {
                                 resolve();
                             } else {
-                                // Usamos un micro-timeout para no bloquear el procesador
                                 setTimeout(checkBuffer, 1);
                             }
                         };
@@ -304,7 +295,6 @@ new class extends Component {
                     this.dc.send(buffer);
                     offset += buffer.byteLength;
 
-                    // Actualizamos la UI solo cada 5MB para no robarle potencia al envío
                     if (offset - lastUpdateOffset >= 5242880 || offset >= file.size) {
                         this.localProgress = Math.min(100, Math.round((offset / file.size) * 100));
                         lastUpdateOffset = offset;
@@ -321,7 +311,7 @@ new class extends Component {
             this.fileStream = streamSaver.createWriteStream(this.transferFileName, {
                 size: this.transferFileSize
             });
-            this.writer = this.fileStream.getWriter(); // Obtenemos el bolígrafo para escribir
+            this.writer = this.fileStream.getWriter();
             
             this.uiStatus = 'receiving';
             this.dc.send('RECEIVER_READY');
@@ -336,7 +326,7 @@ new class extends Component {
 
                 if (event.data === 'END_OF_FILE') {
                     if (this.writer) {
-                        await this.writer.close(); // Cerramos el archivo (¡Terminado!)
+                        await this.writer.close();
                         this.writer = null;
                     }
                     this.localProgress = 100;
@@ -356,9 +346,7 @@ new class extends Component {
                 return; 
             }
             
-            // Si llegan datos binarios, los escribimos directamente en el disco
             if (this.writer) {
-                // Convertimos el paquete a un formato que el escritor entienda
                 await this.writer.write(new Uint8Array(event.data));
                 
                 this.receivedSize += event.data.byteLength;
