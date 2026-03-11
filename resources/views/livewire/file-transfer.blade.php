@@ -170,26 +170,16 @@ new class extends Component {
             const config = { 
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun.relay.metered.ca:80' },
+                    { urls: 'stun:reverbsend.angeldcs.dev:3478' },
                     { 
-                        urls: 'turn:global.relay.metered.ca:80', 
-                        username: '1376979d883d2aa263757076', 
-                        credential: 'oYSWSSqSnzRb/1xo' 
+                        urls: 'turn:reverbsend.angeldcs.dev:3478', 
+                        username: 'hamlet', 
+                        credential: '?Sq$m53eg867' 
                     },
                     { 
-                        urls: 'turn:global.relay.metered.ca:80?transport=tcp', 
-                        username: '1376979d883d2aa263757076', 
-                        credential: 'oYSWSSqSnzRb/1xo' 
-                    },
-                    { 
-                        urls: 'turn:global.relay.metered.ca:443', 
-                        username: '1376979d883d2aa263757076', 
-                        credential: 'oYSWSSqSnzRb/1xo' 
-                    },
-                    { 
-                        urls: 'turns:global.relay.metered.ca:443?transport=tcp', 
-                        username: '1376979d883d2aa263757076', 
-                        credential: 'oYSWSSqSnzRb/1xo' 
+                        urls: 'turn:reverbsend.angeldcs.dev:3478?transport=tcp', 
+                        username: 'hamlet', 
+                        credential: '?Sq$m53eg867' 
                     }
                 ] 
             };
