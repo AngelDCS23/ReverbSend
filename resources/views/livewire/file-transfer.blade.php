@@ -170,7 +170,6 @@ new class extends Component {
             const config = { 
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:reverbsend.angeldcs.dev:3478' },
                     { 
                         urls: 'turn:reverbsend.angeldcs.dev:3478', 
                         username: 'hamlet', 
