@@ -170,20 +170,26 @@ new class extends Component {
             const config = { 
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun.relay.metered.ca:80' },
                     { 
-                        urls: 'turn:openrelay.metered.ca:80',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject'
+                        urls: 'turn:global.relay.metered.ca:80', 
+                        username: '1376979d883d2aa263757076', 
+                        credential: 'oYSWSSqSnzRb/1xo' 
                     },
                     { 
-                        urls: 'turn:openrelay.metered.ca:443',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject'
+                        urls: 'turn:global.relay.metered.ca:80?transport=tcp', 
+                        username: '1376979d883d2aa263757076', 
+                        credential: 'oYSWSSqSnzRb/1xo' 
                     },
                     { 
-                        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject'
+                        urls: 'turn:global.relay.metered.ca:443', 
+                        username: '1376979d883d2aa263757076', 
+                        credential: 'oYSWSSqSnzRb/1xo' 
+                    },
+                    { 
+                        urls: 'turns:global.relay.metered.ca:443?transport=tcp', 
+                        username: '1376979d883d2aa263757076', 
+                        credential: 'oYSWSSqSnzRb/1xo' 
                     }
                 ] 
             };
@@ -193,13 +199,11 @@ new class extends Component {
             if (this.$wire.role === 'sender') {
                 this.dc = this.pc.createDataChannel('fileTransfer', { ordered: true });
                 this.dc.bufferedAmountLowThreshold = 1024 * 1024 * 4; 
-                
                 this.setupDataChannel();
             } else {
                 this.pc.ondatachannel = (event) => {
                     this.dc = event.channel;
                     this.dc.bufferedAmountLowThreshold = 1024 * 1024 * 4;
-                    
                     this.setupDataChannel();
                 };
             }
