@@ -266,67 +266,59 @@ new class extends Component {
             this.uiStatus = 'waiting_receiver';
         },
 
-        startSendingData() {
+        async startSendingData() {
             this.uiStatus = 'sending';
             const file = this.fileToSend;
+            // Volvemos a los 64KB (El tamaño perfecto para que WebRTC no fragmente y se atasque)
             const chunkSize = 65536; 
-            const reader = new FileReader();
             let offset = 0;
             let lastUpdateOffset = 0;
 
-            const readNext = () => {
-                const slice = file.slice(offset, offset + chunkSize);
-                reader.readAsArrayBuffer(slice);
-            };
+            while (offset < file.size) {
+                // PRIMERO comprobamos el atasco, antes de gastar memoria leyendo el archivo
+                if (this.dc.bufferedAmount > this.dc.bufferedAmountLowThreshold) {
+                    await new Promise(resolve => {
+                        this.dc.onbufferedamountlow = () => {
+                            this.dc.onbufferedamountlow = null;
+                            resolve();
+                        };
+                    });
+                }
 
-            reader.onload = (e) => {
+                // Leemos el trocito de disco a RAM súper rápido
+                const slice = file.slice(offset, offset + chunkSize);
+                const buffer = await slice.arrayBuffer();
+
                 try {
-                    this.dc.send(e.target.result);
-                    offset += e.target.result.byteLength;
-                    
+                    this.dc.send(buffer);
+                    offset += buffer.byteLength;
+
+                    // Refrescamos la interfaz cada 1MB para no saturar la tarjeta gráfica
                     if (offset - lastUpdateOffset >= 1048576 || offset >= file.size) {
                         this.localProgress = Math.min(100, Math.round((offset / file.size) * 100));
                         lastUpdateOffset = offset;
                     }
-
-                    if (offset < file.size) {
-                        if (this.dc.bufferedAmount > this.dc.bufferedAmountLowThreshold) {
-                            this.dc.onbufferedamountlow = () => {
-                                this.dc.onbufferedamountlow = null; 
-                                readNext(); 
-                            };
-                        } else {
-                            readNext();
-                        }
-                    } else {
-                        this.dc.send('END_OF_FILE');
-                    }
-                } catch (err) { console.error('Error enviando datos:', err); }
-            };
-            readNext(); 
-        },
-
-        async acceptAndSaveFile() {
-            if ('showSaveFilePicker' in window) {
-                try {
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName: this.transferFileName
-                    });
-                    this.fileStream = await handle.createWritable();
-                    this.uiStatus = 'receiving';
-                    this.dc.send('RECEIVER_READY');
-                } catch (error) {
-                    console.log('Guardado cancelado por el usuario');
+                } catch (err) {
+                    console.error('Error enviando datos:', err);
+                    break;
                 }
-            } else {
-                this.fileStream = null;
-                this.uiStatus = 'receiving';
-                this.dc.send('RECEIVER_READY');
-                alert('Tu navegador no soporta escritura directa a disco. Se usara la RAM.');
             }
+            this.dc.send('END_OF_FILE');
         },
 
-        handleMessage(event) {
+        acceptAndSaveFile() {
+            // ¡Adiós a los bloqueos de Safari y Firefox!
+            // StreamSaver simula una descarga nativa HTTP que va directo al disco
+            this.fileStream = streamSaver.createWriteStream(this.transferFileName, {
+                size: this.transferFileSize
+            });
+            this.writer = this.fileStream.getWriter(); // Obtenemos el bolígrafo para escribir
+            
+            this.uiStatus = 'receiving';
+            this.dc.send('RECEIVER_READY');
+        },
+
+        async handleMessage(event) {
             if (typeof event.data === 'string') {
                 if (event.data === 'RECEIVER_READY') {
                     this.startSendingData();
@@ -334,27 +326,12 @@ new class extends Component {
                 }
 
                 if (event.data === 'END_OF_FILE') {
-                    this.writeQueue = this.writeQueue.then(async () => {
-                        if (this.fileStream) {
-                            await this.fileStream.close();
-                            this.fileStream = null;
-                        } else {
-                            const blob = new Blob(this.receivedChunks, { type: this.transferFileType });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = this.transferFileName;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            setTimeout(() => URL.revokeObjectURL(url), 1000);
-                        }
-                        
-                        this.receivedChunks = []; 
-                        this.receivedSize = 0; 
-                        this.localProgress = 100;
-                        this.uiStatus = 'completed';
-                    });
+                    if (this.writer) {
+                        await this.writer.close(); // Cerramos el archivo (¡Terminado!)
+                        this.writer = null;
+                    }
+                    this.localProgress = 100;
+                    this.uiStatus = 'completed';
                     return; 
                 } else {
                     try {
@@ -370,12 +347,10 @@ new class extends Component {
                 return; 
             }
             
-            this.writeQueue = this.writeQueue.then(async () => {
-                if (this.fileStream) {
-                    await this.fileStream.write(event.data);
-                } else {
-                    this.receivedChunks.push(event.data);
-                }
+            // Si llegan datos binarios, los escribimos directamente en el disco
+            if (this.writer) {
+                // Convertimos el paquete a un formato que el escritor entienda
+                await this.writer.write(new Uint8Array(event.data));
                 
                 this.receivedSize += event.data.byteLength;
                 
@@ -383,8 +358,12 @@ new class extends Component {
                     this.localProgress = Math.min(100, Math.round((this.receivedSize / this.transferFileSize) * 100));
                     this.lastUiUpdateSize = this.receivedSize;
                 }
-            });
+            }
         }
+
+        
+
+        
     }">
 
     {{-- PANEL IZQUIERDO --}}
