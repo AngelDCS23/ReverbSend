@@ -11,6 +11,18 @@ new class extends Component {
     public $inputCode = '';
     public $errorMessage = '';
 
+    public function getTurnCredentials()
+    {
+        $secret = "?Sqm53eg867";
+        $timestamp = time() + 600;
+        $username = $timestamp . ':hamlet';
+
+        return [
+            'username' => $username,
+            'password' => base64_encode(hash_hmac('sha1', $username, $secret, true))
+        ];
+    }
+
     public function prepareTransfer($name, $size, $type, $socketId)
     {
         if (!$socketId) {
@@ -167,18 +179,21 @@ new class extends Component {
         },
 
         async initWebRTC() {
+            const creds = await this.$wire.getTurnCredentials();
+
             const config = { 
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:reverbsend.angeldcs.dev:3478' },
                     { 
                         urls: 'turn:reverbsend.angeldcs.dev:3478', 
-                        username: 'hamlet', 
-                        credential: '?Sq$m53eg867' 
+                        username: creds.username, 
+                        credential: creds.password 
                     },
                     { 
                         urls: 'turn:reverbsend.angeldcs.dev:3478?transport=tcp', 
-                        username: 'hamlet', 
-                        credential: '?Sq$m53eg867' 
+                        username: creds.username, 
+                        credential: creds.password 
                     }
                 ] 
             };
