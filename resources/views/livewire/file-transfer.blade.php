@@ -173,11 +173,18 @@ new class extends Component {
             this.pc = new RTCPeerConnection(config);
 
             if (this.$wire.role === 'sender') {
-                this.dc = this.pc.createDataChannel('fileTransfer');
+                // 1. Añadimos ordered: true para asegurar que los trozos del archivo lleguen en estricto orden
+                this.dc = this.pc.createDataChannel('fileTransfer', { ordered: true });
+                // 2. Subimos el umbral del buffer a 4MB
+                this.dc.bufferedAmountLowThreshold = 1024 * 1024 * 4; 
+                
                 this.setupDataChannel();
             } else {
                 this.pc.ondatachannel = (event) => {
                     this.dc = event.channel;
+                    // Aplicamos el mismo buffer al receptor
+                    this.dc.bufferedAmountLowThreshold = 1024 * 1024 * 4;
+                    
                     this.setupDataChannel();
                 };
             }
@@ -269,23 +276,27 @@ new class extends Component {
         async startSendingData() {
             this.uiStatus = 'sending';
             const file = this.fileToSend;
-            // Volvemos a los 64KB (El tamaño perfecto para que WebRTC no fragmente y se atasque)
-            const chunkSize = 65536; 
+            const chunkSize = 131072; // 128KB: El punto dulce de velocidad
             let offset = 0;
             let lastUpdateOffset = 0;
 
+            // Pre-leemos el primer trozo
             while (offset < file.size) {
-                // PRIMERO comprobamos el atasco, antes de gastar memoria leyendo el archivo
+                // Si el buffer está lleno, esperamos de forma más eficiente
                 if (this.dc.bufferedAmount > this.dc.bufferedAmountLowThreshold) {
                     await new Promise(resolve => {
-                        this.dc.onbufferedamountlow = () => {
-                            this.dc.onbufferedamountlow = null;
-                            resolve();
+                        const checkBuffer = () => {
+                            if (this.dc.bufferedAmount <= this.dc.bufferedAmountLowThreshold) {
+                                resolve();
+                            } else {
+                                // Usamos un micro-timeout para no bloquear el procesador
+                                setTimeout(checkBuffer, 1);
+                            }
                         };
+                        checkBuffer();
                     });
                 }
 
-                // Leemos el trocito de disco a RAM súper rápido
                 const slice = file.slice(offset, offset + chunkSize);
                 const buffer = await slice.arrayBuffer();
 
@@ -293,13 +304,13 @@ new class extends Component {
                     this.dc.send(buffer);
                     offset += buffer.byteLength;
 
-                    // Refrescamos la interfaz cada 1MB para no saturar la tarjeta gráfica
-                    if (offset - lastUpdateOffset >= 1048576 || offset >= file.size) {
+                    // Actualizamos la UI solo cada 5MB para no robarle potencia al envío
+                    if (offset - lastUpdateOffset >= 5242880 || offset >= file.size) {
                         this.localProgress = Math.min(100, Math.round((offset / file.size) * 100));
                         lastUpdateOffset = offset;
                     }
                 } catch (err) {
-                    console.error('Error enviando datos:', err);
+                    console.error('Error:', err);
                     break;
                 }
             }
@@ -307,8 +318,6 @@ new class extends Component {
         },
 
         acceptAndSaveFile() {
-            // ¡Adiós a los bloqueos de Safari y Firefox!
-            // StreamSaver simula una descarga nativa HTTP que va directo al disco
             this.fileStream = streamSaver.createWriteStream(this.transferFileName, {
                 size: this.transferFileSize
             });
@@ -500,7 +509,7 @@ new class extends Component {
                         <button x-show="isP2POpen && uiStatus !== 'waiting_receiver' && uiStatus !== 'sending'" x-cloak
                             @click="sendFile($refs.fileInput.files[0])"
                             class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl transition shadow-[0_0_20px_rgba(220,38,38,0.4)]">
-                            Iniciar Envío Real
+                            Iniciar Envío
                         </button>
 
                         <button x-show="uiStatus === 'waiting_receiver'" x-cloak disabled
@@ -520,7 +529,7 @@ new class extends Component {
                                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                 </path>
                             </svg>
-                            Enviando al disco del receptor...
+                            Enviando...
                         </button>
 
                         <button x-show="!isP2POpen" x-cloak disabled
@@ -540,7 +549,7 @@ new class extends Component {
                     <div x-show="uiStatus === 'file_offered' && localProgress < 100" x-cloak class="mt-6">
                         <button @click="acceptAndSaveFile()"
                             class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition shadow-[0_0_20px_rgba(34,197,94,0.4)]">
-                            Elegir dónde guardar y Recibir
+                            Elegir dónde guardar
                         </button>
                     </div>
                 @endif
